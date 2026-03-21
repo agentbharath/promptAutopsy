@@ -1,0 +1,45 @@
+# PromptAutopsy — Evaluation Inputs
+# 30 broken prompts across all 5 failure modes
+# Use these to test diagnosis, retrieval, and rewrite quality
+
+# ── Vague instruction ─────────────────────────────────────
+Write something about artificial intelligence
+Make a presentation about our product
+Help me with my essay
+Create content for social media
+Write a report on climate change
+
+# ── Missing context ───────────────────────────────────────
+Explain machine learning
+Summarize this article
+Write a cover letter for me
+Give me feedback on my writing
+Translate this to French
+
+# ── Wrong format ──────────────────────────────────────────
+Give me a list of marketing strategies in JSON
+Extract the key points from this meeting transcript
+Create a table comparing iPhone and Android
+Give me the pros and cons of remote work
+Summarize this into bullet points
+
+# ── Conflicting instructions ──────────────────────────────
+Write a detailed comprehensive guide that is also short and to the point
+Be creative and imaginative but also stick strictly to the facts
+Write formally for executives but make it fun and casual
+Cover everything about Python in one paragraph
+Write a beginner guide that also covers advanced topics in depth
+
+# ── Missing examples ──────────────────────────────────────
+Classify these customer reviews as positive negative or neutral
+Extract action items from this transcript and format them nicely
+Write product descriptions in our brand voice
+Generate responses to customer complaints in our style
+Rewrite these headlines to be more engaging
+
+# ── Multiple failure modes ────────────────────────────────
+Write something about our new product launch
+Summarize this and make it detailed but concise and also translate it
+Create a comprehensive but brief marketing email for all our customers
+Analyze our data and give insights
+Write a professional casual email to my client about the project update

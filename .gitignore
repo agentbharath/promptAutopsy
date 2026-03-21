@@ -1,0 +1,8 @@
+venv/
+.env
+promptautopsy_index/
+__pycache__/
+*.pyc
+.DS_Store
+chroma_store/
+raw_docs/
