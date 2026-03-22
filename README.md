@@ -186,31 +186,6 @@ promptAutopsy/
 
 ---
 
-## 🗺️ V2 Roadmap
-
-Key upgrades planned:
-
-- **Deterministic prompt assembly** — programmatic builder replaces LLM rewrite step
-- **LLM classifier for chunk tagging** — replaces keyword heuristics (FM@K 0.46 → ~0.85)
-- **Adaptive verbosity** — output complexity scales with score delta
-- **One-click execution** — run the improved prompt and show output preview
-- **infer_intent() tool** — confidence-based routing to single vs multi-variant output
-- **Feedback loop** — thumbs up/down rating stored in SQLite for index improvement
-
----
-
-## 💬 Interview Talking Points
-
-**What's unique about your system?**
-> "I moved from unstructured prompt rewriting to a compiler-style architecture where prompts are decomposed into role, context, instructions, and examples, and reconstructed deterministically using RAG-grounded transformation rules."
-
-**Why RAG instead of just prompting?**
-> "Every fix is cited from a retrieved source — Anthropic's prompting guidelines, peer-reviewed NLP papers, or community guides. The rewrite is grounded in evidence, not hallucination."
-
-**What did you measure?**
-> "I built an 18-query evaluation set across all 5 failure modes and measured Precision@K, Recall@K, and F1@K. Source precision at K=3 is 0.80. I also documented known failure cases honestly — which matters as much as the wins."
-
----
 
 ## 📄 License
 
