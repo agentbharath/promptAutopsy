@@ -15,7 +15,8 @@ from tools import (
     retrieve_best_practices,
     build_fix_plan,
     rewrite_prompt,
-    score_improvement
+    score_improvement,
+    infer_intent
 )
 import os
 from dotenv import load_dotenv
@@ -93,8 +94,15 @@ def run_pipeline(query: str) -> dict:
             results["hint"] = hint
         return results
     
+    # step 1.1 - infer intent
+
+    intent = infer_intent.invoke(query)
+    results["intent"] = intent
+    
     # Step 2 — diagnose
-    diagnosis = diagnose_prompt.invoke(query)
+    diagnosis = diagnose_prompt.invoke(
+        f"query: {query}\nintent: {intent.get('intent', 'unknown')}"
+    )
     results["diagnosis"] = diagnosis
 
     estimated_delta = estimate_delta(diagnosis)
@@ -118,6 +126,8 @@ def run_pipeline(query: str) -> dict:
         f"original prompt: {query}\n"
         f"fix plan: {str(fix_plan)}\n"
         f"delta: {estimated_delta}\n"
+        f"confidence: {intent.get('confidence', 1.0)}\n"
+        f"intent: {intent.get('intent', 'unknown')}\n"
         f"mode: FILL — fill all [REQUIRED] fields with "
         f"best-guess values based on the original prompt. "
         f"No [REQUIRED] placeholders in output."
@@ -129,6 +139,8 @@ def run_pipeline(query: str) -> dict:
         f"original prompt: {query}\n"
         f"fix plan: {str(fix_plan)}\n"
         f"delta: {estimated_delta}\n"
+        f"confidence: {intent.get('confidence', 1.0)}\n"
+        f"intent: {intent.get('intent', 'unknown')}\n"
         f"mode: TEMPLATE — use [REQUIRED] fields with "
         f"Default + Other options format."
     )

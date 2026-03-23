@@ -29,7 +29,7 @@ def classify_input(query: str) -> str:
     """
 
     word_count = len(query.split())
-    if word_count > 500:
+    if word_count > 5000:
         return "too_long"
     
     response = client.messages.create(
@@ -451,6 +451,16 @@ def rewrite_prompt(input_text: str) -> str:
 
         -----------------------------------------
 
+        CONFIDENCE ROUTING — based on confidence score:
+        confidence ≥ 0.8  → single rewrite (intent is clear)
+        confidence 0.5-0.8 → 2 intent variants
+        confidence < 0.5  → 3 intent variants (maximum ambiguity)
+
+        For keyword_dump classification — always use confidence 
+        routing regardless of other rules.
+
+        -------------------------------------------
+
         NEVER RULES
         - NEVER add sections not in the fix plan
         - NEVER change the user's original intent
@@ -530,6 +540,89 @@ def score_improvement(input_text: str) -> dict:
             "completeness": {"before": 1, "after": 3, "delta": 2, "before_reason": "Could not score", "after_reason": "Could not score"},
             "overall_delta": 6,
             "show_rewrite" : True
+        }
+    
+@tool
+def infer_intent(query: str) -> dict:
+    """
+    Takes the query and calls the LLM to infer the intent of the user query.
+    Later this intent will be used in rewriting the prompt.
+    """
+
+    prompt = """
+        You are an intent inferrer. Your ONLY job is to take the given user query and return the following fields:
+
+        - **intent**: what could be the intent of the given query
+        - **confidence**: confidence rating in the range of 0.0 to 1.0 (0.0 = no confidence, 1.0 = fully certain the inferred intent is correct)
+        - **alternatives**: two alternative intents
+        - **topic**: what subject matter the query relates to
+        - **format**: the ideal output format for the given query
+        - **audience**: the target audience for the given query
+
+        Return your output as pretty-printed JSON with 2-space indentation:
+        ```json
+        {
+        "intent": "primary intent string",
+        "confidence": 0.0-1.0,
+        "alternatives": ["alt1", "alt2"],
+        "topic": "subject matter",
+        "format": "output format",
+        "audience": "target audience"
+        }
+        ```
+
+        **HARD RULES:**
+        - Do not assume facts about the user's identity or any unstated personal context (e.g., name, location, profession, prior history).
+
+        - Inference about likely audience, response format, topic category, and alternative intents IS expected and required — these fields must be inferred from the language, complexity, and phrasing of the query itself.
+
+        - Your output must be grounded in what is present in the query; do not fabricate unstated facts.
+
+        ---
+
+        <examples>
+        <example>
+        EXAMPLE INPUT:
+        "What is the fastest sorting algorithm?"
+
+        EXAMPLE OUTPUT:
+        ```json
+        {
+        "intent": "Learn which sorting algorithm has the best time complexity",
+        "confidence": 0.85,
+        "alternatives": [
+            "Seeking a sorting algorithm suited to a specific use case or dataset",
+            "Comparing sorting algorithms in preparation for a technical interview"
+        ],
+        "topic": "Computer Science / Algorithms",
+        "format": "Explanatory answer with a comparison table of time complexities",
+        "audience": "Intermediate developer or computer science student"
+        }
+        ```
+        </example>
+        </examples>
+    """
+
+    response = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=500,
+        temperature=TEMPERATURE_DETERMINISTIC,
+        system=prompt,
+        messages=[{"role":"user", "content": query}]
+    )
+    intent = response.content[0].text.strip()
+    intent = intent.replace("```json", "").replace("```", "").strip()
+
+    try:
+        return json.loads(intent)
+    except json.JSONDecodeError:
+        return {
+            "intent": "unknown",
+            "confidence": 0.5,
+            "alternatives": [],
+            "topic": "unknown",
+            "format": "unknown",
+            "audience": "general"
         }
 
 if __name__ == "__main__":
