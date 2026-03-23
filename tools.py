@@ -370,17 +370,9 @@ def rewrite_prompt(input_text: str) -> str:
 
         ----------------------------------------
         CLASSIFICATION HANDLING
-        1. valid_prompt      → single rewrite
-        2. keyword_dump      → 2-3 intent variants with [REQUIRED] fillers
-        3. meta_question     → "This is a question about prompting, not a prompt"
-        4. not_a_prompt      → "This is not a prompt. Please provide an LLM task"
-        5. empty             → "Nothing entered. Please paste your prompt"
-        6. too_short         → "Too short to diagnose. Please add more context"
-        7. harmful           → "Cannot process harmful content"
-        8. non_english       → "Currently supports English prompts only"
-        9. contains_code     → preserve code exactly, rewrite instructions only
-        10. too_long         → summarize intent, generate single rewrite
-        11. has_placeholders → preserve ALL placeholders exactly as written
+        The classification and routing has already been handled 
+        upstream. You will only receive valid inputs to rewrite.
+        Focus entirely on executing the fix plan.
 
         ----------------------------------------
 
