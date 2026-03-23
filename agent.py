@@ -41,6 +41,15 @@ tools = [classify_input,
 # agent = create_react_agent(prompt=prompt, tools=tools, llm=client)
 # executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
+def estimate_delta(diagnosis: dict) -> int:
+    severity_map = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+    total = 0
+    for mode, details in diagnosis.items():
+        if isinstance(details, dict) and details.get("detected"):
+            total += severity_map.get(details.get('severity', 'low'), 1)
+
+    return total
+
 def run_pipeline(query: str) -> dict:
     
     # Track tool outputs directly
@@ -87,6 +96,8 @@ def run_pipeline(query: str) -> dict:
     # Step 2 — diagnose
     diagnosis = diagnose_prompt.invoke(query)
     results["diagnosis"] = diagnosis
+
+    estimated_delta = estimate_delta(diagnosis)
     
     # Step 3 — retrieve for each detected issue
     evidence = []
@@ -106,6 +117,7 @@ def run_pipeline(query: str) -> dict:
         f"classification: {classification}\n"
         f"original prompt: {query}\n"
         f"fix plan: {str(fix_plan)}\n"
+        f"delta: {estimated_delta}\n"
         f"mode: FILL — fill all [REQUIRED] fields with "
         f"best-guess values based on the original prompt. "
         f"No [REQUIRED] placeholders in output."
@@ -116,6 +128,7 @@ def run_pipeline(query: str) -> dict:
         f"classification: {classification}\n"
         f"original prompt: {query}\n"
         f"fix plan: {str(fix_plan)}\n"
+        f"delta: {estimated_delta}\n"
         f"mode: TEMPLATE — use [REQUIRED] fields with "
         f"Default + Other options format."
     )
@@ -134,8 +147,11 @@ def run_pipeline(query: str) -> dict:
 
 if __name__ == "__main__":
     test_inputs = [
-            "Help me with marketing"
-        ]
+        # Should be LIGHT — specific, mostly complete
+        "Write a 500-word blog post about AI for software engineers in a technical tone",
+        # Should be FULL — vague, missing everything
+        "Write something about climate change",
+    ]
     
     for test in test_inputs:
         print(f"\n{'='*60}")

@@ -421,6 +421,35 @@ def rewrite_prompt(input_text: str) -> str:
         - Maximum 3 other options per field
 
         -----------------------------------------
+        JSON OUTPUT RULES:
+        When rewriting prompts that request JSON output:
+        - Instruct the LLM to output pretty-printed JSON
+        - Use 2-space indentation
+        - Never instruct to output minified JSON
+        - Add: "Format the JSON with 2-space indentation for readability"
+
+        ----------------------------------------
+        VERBOSITY RULES — follow based on delta:
+
+        delta 2-4 (LIGHT):
+        - Make minimal targeted changes only
+        - Do NOT add XML structure
+        - Do NOT add examples unless ADD_EXAMPLES in fix plan
+        - Feel like a light edit of the original
+        - Maximum 3-4 lines added to original
+
+        delta 5-8 (MODERATE):
+        - Add role and context block
+        - Add constraints as numbered list
+        - No examples unless ADD_EXAMPLES in fix plan
+        - Structured but not overwhelming
+
+        delta 9+ (FULL):
+        - Full compiler output — current behaviour
+        - role + context + instructions + examples
+        - Complete reconstruction
+
+        -----------------------------------------
 
         NEVER RULES
         - NEVER add sections not in the fix plan
