@@ -25,13 +25,19 @@ User Input
     ↓
 classify_input()          → 11 input types (valid, keyword_dump, harmful, etc.)
     ↓
+infer_intent()            → intent + confidence score (NEW in V2)
+    ↓
 diagnose_prompt()         → 5 failure modes scored with severity
+    ↓
+estimate_delta()          → pre-rewrite verbosity estimate (NEW in V2)
     ↓
 retrieve_best_practices() → RAG retrieval from 7 curated sources
     ↓
 build_fix_plan()          → Executable transformation actions
     ↓
 rewrite_prompt()          → Dual output: Ready-to-Use + Editable Template
+                            Adaptive verbosity based on delta (NEW in V2)
+                            Confidence-based variant count (NEW in V2)
     ↓
 score_improvement()       → LLM-as-Judge: before/after scores across 3 dimensions
 ```
@@ -49,6 +55,45 @@ score_improvement()       → LLM-as-Judge: before/after scores across 3 dimensi
 | `wrong_format` | 🟠 High | Structured output requested without schema |
 | `conflicting_instructions` | 🟡 Medium | Contradictory instructions the LLM cannot resolve |
 | `missing_examples` | 🟢 Low | Pattern-sensitive task with no few-shot examples |
+
+---
+
+## 🧠 V2 Features
+
+### Intent Inference
+Every prompt is analysed for intent before diagnosis. The system infers:
+- Primary intent and confidence score (0.0–1.0)
+- 2 alternative interpretations
+- Topic, format, and target audience
+
+```python
+{
+  "intent"      : "cold outreach email",
+  "confidence"  : 0.85,
+  "alternatives": ["nurture sequence", "onboarding email"],
+  "topic"       : "SaaS marketing",
+  "format"      : "email",
+  "audience"    : "B2B decision makers"
+}
+```
+
+### Adaptive Verbosity
+Rewrite depth scales to how broken the prompt actually is:
+
+| Delta | Severity | Output |
+|---|---|---|
+| 2–4 | Light | Minimal targeted edits — no XML structure |
+| 5–8 | Moderate | Role + context block + constraints |
+| 9+ | Full | Complete reconstruction — role, context, instructions, examples |
+
+### Confidence-Based Routing
+Number of output variants scales to intent confidence:
+
+| Confidence | Variants |
+|---|---|
+| ≥ 0.8 | Single rewrite — intent is clear |
+| 0.5–0.8 | 2 intent variants |
+| < 0.5 | 3 intent variants — maximum ambiguity |
 
 ---
 
@@ -78,7 +123,7 @@ Evaluated across 18 queries covering all 5 failure modes:
 | Source F1 | **0.73** | 0.80 |
 | Failure Mode Precision | 0.46 | 0.47 |
 
-**Failure mode precision is lower (0.46)** because V1 uses keyword heuristics for chunk tagging. V2 will replace this with an LLM classifier (estimated improvement to ~0.85).
+**Failure mode precision is lower (0.46)** because V1 uses keyword heuristics for chunk tagging. V2.2 will replace this with an LLM classifier (estimated improvement to ~0.85).
 
 **Known weak queries:** JSON structured output (scores < 0.60), inconsistent LLM outputs (no relevant source in index).
 
@@ -106,7 +151,7 @@ Evaluated across 18 queries covering all 5 failure modes:
 
 Every rewrite produces two versions:
 
-**✅ Ready to Use** — all fields filled with best-guess values based on context. Paste directly into ChatGPT or Claude.
+**✅ Ready to Use** — all fields filled with best-guess values based on context. Paste directly into ChatGPT or Claude. Zero editing required.
 
 **🧩 Editable Template** — structured template with `[REQUIRED: field]`, `Default: value`, and `Other options:` for full control.
 
@@ -176,16 +221,43 @@ promptAutopsy/
 ├── scraper.py        → Scrapes 7 knowledge sources into raw_docs/
 ├── ingest.py         → Chunks + embeds + indexes into ChromaDB
 ├── retrieve.py       → MMR retrieval with caching
-├── tools.py          → 6 LangChain tools (classify → diagnose → retrieve → fix → rewrite → score)
-├── agent.py          → Sequential RAG pipeline
+├── tools.py          → 7 LangChain tools (classify → infer_intent → diagnose → retrieve → fix → rewrite → score)
+├── agent.py          → Sequential RAG pipeline with adaptive verbosity
 ├── eval_dataset.py   → 18 eval queries with ground truth
 ├── eval.py           → Precision@K, Recall@K, F1@K evaluation
-├── app.py            → Streamlit UI
+├── app.py            → Streamlit UI with dual output tabs
 └── raw_docs/         → Scraped knowledge base (gitignored)
 ```
 
 ---
 
+## 🗺️ V2 Roadmap (Parked)
+
+Documented and ready to implement after next two projects:
+
+- **Deterministic prompt assembly** — programmatic builder replaces LLM rewrite step
+- **LLM classifier for chunk tagging** — replaces keyword heuristics (FM@K 0.46 → ~0.85)
+- **3-5 diverse examples** — dynamically generated instead of 1 static example
+- **One-click execution** — run the improved prompt and show output preview
+- **Feedback loop** — thumbs up/down stored in SQLite for index improvement
+
+---
+
+## 💬 
+
+**What's unique about this system?**
+> "I moved from unstructured prompt rewriting to a compiler-style architecture where prompts are decomposed into role, context, instructions, and examples, and reconstructed deterministically using RAG-grounded transformation rules."
+
+**Why RAG instead of just prompting?**
+> "Every fix is cited from a retrieved source — Anthropic's prompting guidelines, peer-reviewed NLP papers, or community guides. The rewrite is grounded in evidence, not hallucination."
+
+**What did you measure?**
+> "I built an 18-query evaluation set across all 5 failure modes and measured Precision@K, Recall@K, and F1@K. Source precision at K=3 is 0.80. I also documented known failure cases honestly — which matters as much as the wins."
+
+**What's new in V2?**
+> "V2 added intent inference with confidence scoring, adaptive verbosity that scales rewrite depth to how broken the prompt actually is, and confidence-based routing that generates 1-3 output variants depending on how ambiguous the intent is."
+
+---
 
 ## 📄 License
 
